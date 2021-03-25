@@ -1,0 +1,25 @@
+Prazo: 25/03 (penalização de 2pts por dia de atraso)
+
+Cinemática: Programar o controle de locomoção em C++ ou Python:  
+A atividade consiste em programar o robô de direção diferencial virtual do CoppeliaSim, fornecido no arquivo  “Projeto1.ttt".
+
+Implementar o código de controle em C++ ou Python utilizando a API de programação remota do Coppelia: http://www.coppeliarobotics.com/helpFiles/en/remoteApiOverview.htm
+
+   C++: http://www.coppeliarobotics.com/helpFiles/en/remoteApiFunctions.htm
+   Python: http://www.coppeliarobotics.com/helpFiles/en/remoteApiFunctionsPython.htm
+
+O exercício estará correto se o robô se dirigir para para qualquer posição (x, y, theta) indicada movendo o Target. 
+Tente mover o target manualmente para fazer com que o robô posicione todas as bolas nas quinas de mesma cor.
+
+Instruções (C++):
+
+1 - Configure o Makefile indicando o caminho para a pasta "programming" dentro da sua pasta de instalação do Coppelia. Ex:
+COPPELIA_DIR=/home/hans/Programs/CoppeliaSim_Edu_V4_1_0_Ubuntu20_04/programming
+
+2 - Abrir a cena "Projeto1.ttt" no Coppelia
+
+3 - Compilar e executar:
+
+make clean
+make
+./robot
