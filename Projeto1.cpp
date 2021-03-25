@@ -111,7 +111,12 @@ void controle_movimento(simxFloat pos[3], simxFloat goal[3], simxFloat* PhiL, si
         if(alpha >= 0)
             alpha -= M_PI;
         else
-            alpha = M_PI + alpha;
+            alpha += M_PI;
+        
+        if(beta < 0)
+            beta += M_PI;
+        else
+            beta -= M_PI;
 
         v_robot = kp * rho;
         w_robot = ka * alpha + kb * beta;
