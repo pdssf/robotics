@@ -1,8 +1,7 @@
 # Para rodar no windows
 
 Só abrir o .ttt no coppelia, iniciar a simulação (botão play) e rodar o script em python 
-no cmd ou powershell normalmente (por enquanto não fiz o scrip do robô diferencial, mas é possível testar usando 
-o simpleTest.py nos diretórios windows ou linux).
+no cmd ou powershell normalmente.
 
 # Para rodar no linux
 
