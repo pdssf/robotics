@@ -11,5 +11,4 @@ Em teoria é igual, porém ainda não testei...
 
 Antes de iniciar a simulação no coppelia deve-se colocar a linha simRemoteApi.start(19999), dentro de qualquer 
 script da cena, de preferência o script principal, como descrito na imagem cop_change, que se encontra no diretório 
-api_python (no .ttt que se encrontra dentro do diretório api_python isso já foi feito, portanto é  só abri-lo e apertar 
-play).
+api_python (no .ttt que se encrontra dentro do diretório windows isso já foi feito).
