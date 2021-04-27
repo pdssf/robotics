@@ -33,15 +33,25 @@ def getPosition(clientID, objectHandle):    # [x,y,theta]
     
     return position
 
+def getDists(clientID, objectHandles):
+
+    dists = []
+    for i in range(12):
+        x, a, b, c, d = sim.simxReadProximitySensor(clientID, objectHandles[i], sim.simx_opmode_oneshot_wait)
+        dists.append((a, b[2]))
+
+    return dists
+
 def toDeg(radians):
 
     return radians * (180.0 / math.pi)
 
-def movementControl(pos, goal):
+def movementControl(pos, goal, clientID, usensors, rightMotorHandle, leftMotorHandle):
+
+    ## OBS: No nosso caso beta não importa pois os nossos alvos não têm orientação.
 
     kp = 1.2
     ka = 5.0
-    kb = -1.5
 
     dx = goal[0] - pos[0]
     dy = goal[1] - pos[1]
@@ -57,46 +67,42 @@ def movementControl(pos, goal):
 
     if(alpha < -math.pi):  # o livro diz que alpha deve estar entre -pi e pi, aqui ajusto o alpha para estes limites
         alpha += 2 * math.pi
+        
+    v_robot = kp * rho
+    w_robot = ka * alpha
+
+    noDetectionDist = 0.5
+    maxDetectionDist = 0.2
+    detect = [0, 0, 0, 0, 0, 0]
+    braitenbergL = [-0.2, -0.5, -0.8, -1.1, -1.4, -1.7, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    braitenbergR = [-1.7, -1.4, -1.1, -0.8, -0.5, -0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+    data = getDists(clientID, usensors)
+    dists = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+
+    for i in range(6):
+        if(data[i][0] == True and data[i][1] < noDetectionDist):
+            if(data[i][1] < maxDetectionDist):
+                dists[i] = maxDetectionDist
+            else:
+                dists[i] = data[i][1]
+            detect[i] = 1 - ((dists[i] - maxDetectionDist) / (noDetectionDist - maxDetectionDist))
+        else:
+            detect[i] = 0
     
-    if ((temp >= 0 and goal[2] >= 0) or (temp < 0 and goal[2] < 0)):  # Robo baixo , goal cima || robo cima target baixo
-        beta = goal[2] - temp   # ajusta beta 
-    elif (temp < 0 and goal[2] >= 0 and goal[2] < (temp + math.pi)):
-        beta = goal[2] - temp
-    elif (temp < 0 and goal[2] >= 0 and goal[2] >= (temp + math.pi)):
-        beta = -(abs(goal[2] - math.pi) + temp + math.pi)
-    elif (temp >= 0 and goal[2] < 0 and abs(goal[2]) < abs(temp - math.pi)):
-        beta = goal[2] - temp
-    elif (temp >= 0 and goal[2] < 0 and abs(goal[2]) >= abs(temp - math.pi)):
-        beta = goal[2] + math.pi + abs(temp - math.pi)
+    if(sorted(detect, reverse=True)[0] >= 0.9):
 
-    print(f'TH: {toDeg(theta):.2f}° AL: {toDeg(alpha):.2f}° BT: {toDeg(beta):.2f}°')
+        print(sorted(detect, reverse=True)[0])
+        phiL = 3
+        phiR = 3
+        for i in range(6):
+            phiL += (braitenbergL[i] * detect[i])
+            phiR += (braitenbergR[i] * detect[i])
 
-    if(alpha > (-math.pi / 2) and alpha <= (math.pi / 2)): # se alvo à frente do robô
-        
-        v_robot = kp * rho
-        w_robot = ka * alpha + kb * beta
-
-        phiL = (v_robot - (L * w_robot)) / (4 * RAIO)
-        phiR = (v_robot + (L * w_robot)) / (4 * RAIO)
-
-    else:   # se alvo atrás do robô
-        
-        if(alpha >= 0):
-            alpha -= math.pi
-        else:
-            alpha += math.pi
-        
-        if(beta < 0):
-            beta += math.pi
-        else:
-            beta -= math.pi
-
-        v_robot = kp * rho
-        w_robot = ka * alpha + kb * beta
-
-        phiL = -(v_robot + (L * w_robot)) / (4 * RAIO)
-        phiR = -(v_robot - (L * w_robot)) / (4 * RAIO)
-
+    else:
+        phiL = (v_robot - (L * w_robot)) / (20 * RAIO)
+        phiR = (v_robot + (L * w_robot)) / (20 * RAIO)
+    
     return phiL, phiR
 
 def setTargetSpeed(clientID, phiL, phiR, leftMotorHandle, rightMotorHandle):
@@ -116,8 +122,13 @@ if (clientID != -1):
     err1, ddRobotHandle = sim.simxGetObjectHandle(clientID, 'RobotFrame#', sim.simx_opmode_oneshot_wait)
     err2, leftMotorHandle = sim.simxGetObjectHandle(clientID, 'LeftMotor#', sim.simx_opmode_oneshot_wait)
     err3, rightMotorHandle = sim.simxGetObjectHandle(clientID, 'RightMotor#', sim.simx_opmode_oneshot_wait)
-    err4, targetHandle = sim.simxGetObjectHandle(clientID, 'BlueBall01#', sim.simx_opmode_oneshot_wait)
-    
+    err4, targetHandle = sim.simxGetObjectHandle(clientID, 'RedBall01#', sim.simx_opmode_oneshot_wait)
+
+    usensors = []
+    for i in range(1, 13):
+        err, usensor = sim.simxGetObjectHandle(clientID, 'Proximity_sensor' + str(i) + '#', sim.simx_opmode_oneshot_wait)
+        usensors.append(usensor)
+
     print(f'RobotFrame: {ddRobotHandle}')
     print(f'LeftMotor: {leftMotorHandle}')
     print(f'RightMotor: {rightMotorHandle}')
@@ -143,11 +154,11 @@ if (clientID != -1):
         if (sim.simxGetLastCmdTime(clientID) == 0):
             break
 
-        print(f'Posicao: [{pos[0]:.2f} {pos[1]:.2f} {toDeg(pos[2]):.2f}°] ', end = '')
+        #print(f'Posicao: [{pos[0]:.2f} {pos[1]:.2f} {toDeg(pos[2]):.2f}°] ', end = '')
         
         # Set new target speeds: robot going in a circle
         goal = getPosition(clientID, targetHandle)
-        print(f'Objetivo: [{goal[0]:.2f} {goal[1]:.2f} {toDeg(goal[2]):.2f}°] ', end = '')
+        #print(f'Objetivo: [{goal[0]:.2f} {goal[1]:.2f} {toDeg(goal[2]):.2f}°] ', end = '')
         
         ERR_MARGIN = 0.05
         phiL = 0.0
@@ -155,16 +166,18 @@ if (clientID != -1):
 
         if ((abs(goal[1] - pos[1]) <= ERR_MARGIN) and (abs(goal[0] - pos[0]) <= ERR_MARGIN and (abs(goal[2] - pos[2]) <= ERR_MARGIN))):
             print('Fim!')
-            phiL = 0
-            phiR = 0
+            phiL = 0.0
+            phiR = 0.0
             #break
         else:
-            phiL, phiR = movementControl(pos, goal)
+            phiL, phiR = movementControl(pos, goal, clientID, usensors, rightMotorHandle, leftMotorHandle)
         
-        setTargetSpeed(clientID, phiL, phiR, leftMotorHandle, rightMotorHandle);
+        #print('Velocidades:', phiL, phiR)
+        #setTargetSpeed(clientID, phiL, phiR, leftMotorHandle, rightMotorHandle);
 
         # Leave some time for CoppeliaSim do it's work
-        time.sleep(1)
+        setTargetSpeed(clientID, phiL, phiR, leftMotorHandle, rightMotorHandle)
+        time.sleep(0.1)
     
     # Stop the robot and disconnect from CoppeliaSim
     setTargetSpeed(clientID, 0, 0, leftMotorHandle, rightMotorHandle)
