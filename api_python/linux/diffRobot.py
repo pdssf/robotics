@@ -141,7 +141,7 @@ def movementControl(pos, goal, clientID, usensors):
 
 
 def setTargetSpeed(clientID, phiL, phiR, revoluteJointSpeed, leftMotorHandle, rightMotorHandle, revoluteJointHandle):
-    """ Realiza o controle de velocidade do robô"""
+    """ Realiza o controle de velocidade do robô e da hélice indicativa"""
     sim.simxSetJointTargetVelocity(
         clientID, leftMotorHandle, phiL, sim.simx_opmode_oneshot)
     sim.simxSetJointTargetVelocity(
@@ -250,7 +250,6 @@ def main():
                 if(0.0 not in mask):
                     # para o robô e manda a hélice girar no sentido anti-horário por aproximadamente três segundos.
                     phiL, phiR, phiH = 0, 0, 2
-                    #print('sim vermelho')
                     setTargetSpeed(clientID, phiL, phiR, phiH, leftMotorHandle,
                                    rightMotorHandle, revoluteJointHandle)
                     time.sleep(3)
@@ -260,15 +259,15 @@ def main():
                 else:
                     # então para o robô e manda a hélice girar no sentido horário por aproximadamente três segundos.
                     phiL, phiR, phiH = 0, 0, -2
-                    #print('sim azul')
                     setTargetSpeed(clientID, phiL, phiR, phiH, leftMotorHandle,
                                    rightMotorHandle, revoluteJointHandle)
                     time.sleep(3)
                     setTargetSpeed(clientID, phiL, phiR, 0, leftMotorHandle,
                                    rightMotorHandle, revoluteJointHandle)
 
-                # pega a referência do próximo alvo, se há alvos que ainda não foram explorados.
+                #se ainda há alvos
                 if(targetIterator <= 8):
+                # pega a referência do próximo alvo.
                     err6, targetHandle = sim.simxGetObjectHandle(
                         clientID, 'Target' + str(targetIterator) + '#', sim.simx_opmode_oneshot_wait)
                     targetIterator += 1
@@ -279,13 +278,13 @@ def main():
             else:
                 phiL, phiR = movementControl(pos, goal, clientID, usensors)
                 phiH = 0
-                #print('nao vermelho')
                 setTargetSpeed(clientID, phiL, phiR, phiH, leftMotorHandle,
                                rightMotorHandle, revoluteJointHandle)
 
-            # descomente estas duas linhas se você quiser salvar as imagens capturadas.
-            #cv2.imwrite('capture' + str(imageIterator) + '.png', definitiveImage)
-            #imageIterator += 1
+        # descomente estas duas linhas se você quiser salvar as imagens capturadas.
+        # imageItarator = 0
+        #cv2.imwrite('capture' + str(imageIterator) + '.png', definitiveImage)
+        #imageIterator += 1
 
         setTargetSpeed(clientID, phiL, phiR, phiH, leftMotorHandle,
                        rightMotorHandle, revoluteJointHandle)
